@@ -85,7 +85,25 @@ public class Simulateur {
 
     // Fonction de calcul de l'impôt sur le revenu net en France en 2024 sur les revenus 2023
 
-    public int calculImpot(int revNetDecl1, int revNetDecl2, SituationFamiliale sitFamilliale, int nbEnfants, int nbEnfantsHandicapes, boolean parentIsol) {
+    /**
+     * Calcule l'impôt sur le revenu net en France pour l'année 2024, basé sur les revenus de l'année 2023.
+     * @param revNetDecl1 Le revenu net du déclarant 1
+     * @param revNetDecl2 Le revenu net du déclarant 2
+     * @param sitFamilliale La situation familiale (CELIBATAIRE, MARIE, DIVORCE, VEUF ou PACSE)
+     * @param nbEnfants Le nombre d'enfants à charge
+     * @param nbEnfantsHandicapes Le nombre d'enfants à charge en situation de handicap
+     * @param parentIsol Si le déclarant est un parent isolé ou non
+     * @return Le montant final de l'impôt sur le revenu après calcul
+     * @throws IllegalArgumentException Si l'un des revenus est négatif, ou si le nombre d'enfants/d'enfants handicapés est invalide, ou en cas d'incohérence dans la situation familiale
+     */
+    public int calculImpot (
+            int revNetDecl1,
+            int revNetDecl2,
+            SituationFamiliale sitFamilliale,
+            int nbEnfants,
+            int nbEnfantsHandicapes,
+            boolean parentIsol
+    ) {
 
         // Préconditions
         if ( revNetDecl1  < 0 || revNetDecl2 < 0 ) {
@@ -137,7 +155,7 @@ public class Simulateur {
         System.out.println( "Situation familiale : " + sitFam.name() );
 
         // Abattement
-        calculAbbatement();
+        calculAbatement();
 
         // parts déclarants
         calculPartDeclarants();
@@ -168,8 +186,12 @@ public class Simulateur {
     }
 
 
-    // EXIGENCE : EXG_IMPOT_02
-    private void calculAbbatement(){
+    /**
+     * EXIGENCE : EXG_IMPOT_02
+     * Calcule l'abattement applicable sur les revenus nets en se basant sur un taux prédéfini, tout en respectant des limites minimales
+     * et maximales. Met à jour ensuite le revenu fiscal de référence en soustrayant l'abattement du total des revenus nets.
+     */
+    private void calculAbatement(){
         long abt1 = Math.round(rNetDecl1 * TAUX_ABATTEMENT);
         long abt2 = Math.round(rNetDecl2 * TAUX_ABATTEMENT);
 
@@ -203,7 +225,12 @@ public class Simulateur {
         System.out.println( "Revenu fiscal de référence : " + rFRef );
     }
 
-    // EXIGENCE : EXG_IMPOT_03
+
+    /**
+     * EXIGENCE : EXG_IMPOT_03
+     * Calcule le nombre de parts fiscales du foyer en fonction de la situation familiale, du nombre d'enfants à charge,
+     * du nombre d'enfants handicapés et du statut de parent isolé.
+     */
     private void calculPartDeclarants(){
         switch ( sitFam ) {
             case CELIBATAIRE, DIVORCE, VEUF:
@@ -244,7 +271,11 @@ public class Simulateur {
         System.out.println( "Nombre de parts : " + nbPts );
     }
 
-    // EXIGENCE : EXG_IMPOT_07:
+    /**
+     * EXIGENCE : EXG_IMPOT_07:
+     * Calcule la contribution exceptionnelle sur les hauts revenus en se basant sur le revenu fiscal de référence et
+     * en appliquant des taux spécifiques selon des tranches définies pour les célibataires et les couples.
+     */
     private void calculContributionHautsRevenus(){
         contribExceptionnelle = 0;
         int i = 0;
@@ -270,7 +301,12 @@ public class Simulateur {
         System.out.println( "Contribution exceptionnelle sur les hauts revenus : " + contribExceptionnelle );
     }
 
-    // EXIGENCE : EXG_IMPOT_04
+
+    /**
+     * EXIGENCE : EXG_IMPOT_04
+     * Calcule l'impôt brut des déclarants en répartissant le revenu fiscal de référence sur le nombre de parts
+     * du déclarant et en appliquant les tranches d'imposition avec leurs taux respectifs.
+     */
     private void calculImpotdeclarants(){
         rImposable = rFRef / nbPtsDecl ;
 
@@ -293,7 +329,12 @@ public class Simulateur {
         System.out.println( "Impôt brut des déclarants : " + mImpDecl );
     }
 
-    // EXIGENCE : EXG_IMPOT_04
+
+    /**
+     * EXIGENCE : EXG_IMPOT_04
+     * Calcule l'impôt brut du foyer fiscal complet en répartissant le revenu fiscal de référence sur le nombre total de parts
+     * et en appliquant les différentes tranches d'imposition avec leurs taux respectifs.
+     */
     private void calculImpotFoyerFiscalComplet(){
 
         rImposable =  rFRef / nbPts;
@@ -316,7 +357,11 @@ public class Simulateur {
         System.out.println( "Impôt brut du foyer fiscal complet : " + mImp );
     }
 
-    // EXIGENCE : EXG_IMPOT_05
+    /**
+     * EXIGENCE : EXG_IMPOT_05
+     * Calcule la baisse d'impôt autorisée en comparant l'impôt des déclarants et l'impôt du foyer fiscal complet,
+     * puis en appliquant un plafonnement basé sur le nombre de parts supplémentaires obtenues.
+     */
     private void calculBaisseImpot(){
         // baisse impot
 
@@ -339,7 +384,12 @@ public class Simulateur {
         mImpAvantDecote = mImp;
     }
 
-    // EXIGENCE : EXG_IMPOT_06
+
+    /**
+     * EXIGENCE : EXG_IMPOT_06
+     * Calcule le montant de la décote applicable en fonction de l'impôt brut du foyer fiscal, des seuils et
+     * taux définis pour un déclarant seul ou un couple. La décote ne peut pas excéder le montant total de l'impôt.
+     */
     private void calculDecote(){
         decote = 0;
         // decote
