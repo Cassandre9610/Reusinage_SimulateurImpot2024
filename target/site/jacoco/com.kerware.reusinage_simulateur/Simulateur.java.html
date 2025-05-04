@@ -1,0 +1,455 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Simulateur.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">SimulateurImpot2024</a> &gt; <a href="index.source.html" class="el_package">com.kerware.reusinage_simulateur</a> &gt; <span class="el_source">Simulateur.java</span></div><h1>Simulateur.java</h1><pre class="source lang-java linenums">package com.kerware.reusinage_simulateur;
+
+/**
+ *  Cette classe permet de simuler le calcul de l'impôt sur le revenu
+ *  en France pour l'année 2024 sur les revenus de l'année 2023 pour
+ *  des cas simples de contribuables célibataires, mariés, divorcés, veufs
+ *  ou pacsés avec ou sans enfants à charge ou enfants en situation de handicap
+ *  et parent isolé.
+ *
+ *  Pas de lisibilité, pas de commentaires, pas de tests
+ *  Pas de documentation, pas de gestion des erreurs
+ *  Pas de logique métier, pas de modularité
+ *  Pas de gestion des exceptions, pas de gestion des logs
+ *  Principe &quot;Single Responsability&quot; non respecté
+ *  Pas de traçabilité vers les exigences métier
+ **/
+
+<span class="fc" id="L18">public class Simulateur {</span>
+
+    // Les limites des tranches de revenus imposables
+<span class="fc" id="L21">    private final int[] limites = new int[]{ 0, 11294, 28797, 82341, 177106, Integer.MAX_VALUE };</span>
+
+    // Les taux d'imposition par tranche
+<span class="fc" id="L24">    private final double[] taux = new double[]{ 0.0, 0.11, 0.3, 0.41, 0.45 };</span>
+
+    // Les limites des tranches pour la contribution exceptionnelle sur les hauts revenus
+<span class="fc" id="L27">    private final int[] limitesCEHR = new int[]{ 0, 250000, 500000, 1000000, Integer.MAX_VALUE };</span>
+
+    // Les taux de la contribution exceptionnelle sur les hauts revenus pour les celibataires
+<span class="fc" id="L30">    private final double[] tauxCEHRCelibataire = new double[]{ 0.0, 0.03, 0.04, 0.04 };</span>
+
+    // Les taux de la contribution exceptionnelle sur les hauts revenus pour les couples
+<span class="fc" id="L33">    private final double[] tauxCEHRCouple = new double[]{ 0.0, 0.0, 0.03, 0.04 };</span>
+
+<span class="fc" id="L35">    private final int NB_ENFANT_MIN = 0;</span>
+<span class="fc" id="L36">    private final int NB_ENFANT_MAX = 7;</span>
+    
+    // Abattement
+<span class="fc" id="L39">    private final int LIMITE_ABATTEMENT_MAX = 14171;</span>
+<span class="fc" id="L40">    private final int LIMITE_ABATTEMENT_MIN = 495;</span>
+<span class="fc" id="L41">    private final double TAUX_ABATTEMENT = 0.1;</span>
+
+    // Plafond de baisse maximal par demi part
+<span class="fc" id="L44">    private final double PLAFOND_DEMI_PART = 1759;</span>
+
+<span class="fc" id="L46">    private final double SEUIL_DECOTE_DECLARANT_SEUL = 1929;</span>
+<span class="fc" id="L47">    private final double SEUIL_DECOTE_DECLARANT_COUPLE = 3191;</span>
+
+<span class="fc" id="L49">    private final double DECOTE_MAX_DECLARANT_SEUL = 873;</span>
+<span class="fc" id="L50">    private final double DECOTE_MAX_DECLARANT_COUPLE = 1444;</span>
+<span class="fc" id="L51">    private final double TAUX_DECOTE = 0.4525;</span>
+
+    
+    
+    // revenu net
+<span class="fc" id="L56">    private int rNetDecl1 = 0;</span>
+<span class="fc" id="L57">    private int rNetDecl2 = 0;</span>
+    // nb enfants
+<span class="fc" id="L59">    private int nbEnf = 0;</span>
+    // nb enfants handicapés
+<span class="fc" id="L61">    private int nbEnfH = 0;</span>
+    // situation familiale
+<span class="fc" id="L63">    private SituationFamiliale sitFam = SituationFamiliale.CELIBATAIRE;</span>
+    // revenu fiscal de référence
+<span class="fc" id="L65">    private double rFRef = 0;</span>
+    // revenu imposable
+<span class="fc" id="L67">    private double rImposable = 0;</span>
+    // abattement
+<span class="fc" id="L69">    private double abt = 0;</span>
+    // nombre de parts des déclarants
+<span class="fc" id="L71">    private double nbPtsDecl = 0;</span>
+    // nombre de parts du foyer fiscal
+<span class="fc" id="L73">    private double nbPts = 0;</span>
+    // decote
+<span class="fc" id="L75">    private double decote = 0;</span>
+    // impôt des déclarants
+<span class="fc" id="L77">    private double mImpDecl = 0;</span>
+    // impôt du foyer fiscal
+<span class="fc" id="L79">    private double mImp = 0;</span>
+<span class="fc" id="L80">    private double mImpAvantDecote = 0;</span>
+    // parent isolé
+<span class="fc" id="L82">    private boolean parIso = false;</span>
+    // Contribution exceptionnelle sur les hauts revenus
+<span class="fc" id="L84">    private double contribExceptionnelle = 0;</span>
+
+    // Fonction de calcul de l'impôt sur le revenu net en France en 2024 sur les revenus 2023
+
+    /**
+     * Calcule l'impôt sur le revenu net en France pour l'année 2024, basé sur les revenus de l'année 2023.
+     * @param revNetDecl1 Le revenu net du déclarant 1
+     * @param revNetDecl2 Le revenu net du déclarant 2
+     * @param sitFamilliale La situation familiale (CELIBATAIRE, MARIE, DIVORCE, VEUF ou PACSE)
+     * @param nbEnfants Le nombre d'enfants à charge
+     * @param nbEnfantsHandicapes Le nombre d'enfants à charge en situation de handicap
+     * @param parentIsol Si le déclarant est un parent isolé ou non
+     * @return Le montant final de l'impôt sur le revenu après calcul
+     * @throws IllegalArgumentException Si l'un des revenus est négatif, ou si le nombre d'enfants/d'enfants handicapés est invalide, ou en cas d'incohérence dans la situation familiale
+     */
+    public int calculImpot (
+            int revNetDecl1,
+            int revNetDecl2,
+            SituationFamiliale sitFamilliale,
+            int nbEnfants,
+            int nbEnfantsHandicapes,
+            boolean parentIsol
+    ) {
+
+        // Préconditions
+<span class="pc bpc" id="L109" title="1 of 4 branches missed.">        if ( revNetDecl1  &lt; 0 || revNetDecl2 &lt; 0 ) {</span>
+<span class="fc" id="L110">            throw new IllegalArgumentException(&quot;Le revenu net ne peut pas être négatif&quot;);</span>
+        }
+
+<span class="fc bfc" id="L113" title="All 2 branches covered.">        if ( nbEnfants &lt; NB_ENFANT_MIN ) {</span>
+<span class="fc" id="L114">            throw new IllegalArgumentException(&quot;Le nombre d'enfants ne peut pas être négatif&quot;);</span>
+        }
+
+<span class="fc bfc" id="L117" title="All 2 branches covered.">        if ( nbEnfantsHandicapes &lt; NB_ENFANT_MIN ) {</span>
+<span class="fc" id="L118">            throw new IllegalArgumentException(&quot;Le nombre d'enfants handicapés ne peut pas être négatif&quot;);</span>
+        }
+
+<span class="fc bfc" id="L121" title="All 2 branches covered.">        if ( sitFamilliale == null ) {</span>
+<span class="fc" id="L122">            throw new IllegalArgumentException(&quot;La situation familiale ne peut pas être null&quot;);</span>
+        }
+
+<span class="fc bfc" id="L125" title="All 2 branches covered.">        if ( nbEnfantsHandicapes &gt; nbEnfants ) {</span>
+<span class="fc" id="L126">            throw new IllegalArgumentException(&quot;Le nombre d'enfants handicapés ne peut pas être supérieur au nombre d'enfants&quot;);</span>
+        }
+
+<span class="fc bfc" id="L129" title="All 2 branches covered.">        if ( nbEnfants &gt; NB_ENFANT_MAX ) {</span>
+<span class="fc" id="L130">            throw new IllegalArgumentException(&quot;Le nombre d'enfants ne peut pas être supérieur à &quot;+NB_ENFANT_MAX);</span>
+        }
+
+<span class="fc bfc" id="L133" title="All 6 branches covered.">        if ( parentIsol &amp;&amp; ( sitFamilliale == SituationFamiliale.MARIE || sitFamilliale == SituationFamiliale.PACSE ) ) {</span>
+<span class="fc" id="L134">            throw new IllegalArgumentException(&quot;Un parent isolé ne peut pas être marié ou pacsé&quot;);</span>
+        }
+
+<span class="fc bfc" id="L137" title="All 6 branches covered.">        boolean seul = sitFamilliale == SituationFamiliale.CELIBATAIRE || sitFamilliale == SituationFamiliale.DIVORCE || sitFamilliale == SituationFamiliale.VEUF;</span>
+<span class="pc bpc" id="L138" title="1 of 4 branches missed.">        if (  seul &amp;&amp; revNetDecl2 &gt; 0 ) {</span>
+<span class="nc" id="L139">            throw new IllegalArgumentException(&quot;Un célibataire, un divorcé ou un veuf ne peut pas avoir de revenu pour le déclarant 2&quot;);</span>
+        }
+
+        // Initialisation des variables
+
+<span class="fc" id="L144">        rNetDecl1 = revNetDecl1;</span>
+<span class="fc" id="L145">        rNetDecl2 = revNetDecl2;</span>
+<span class="fc" id="L146">        sitFam = sitFamilliale;</span>
+
+<span class="fc" id="L148">        nbEnf = nbEnfants;</span>
+<span class="fc" id="L149">        nbEnfH = nbEnfantsHandicapes;</span>
+<span class="fc" id="L150">        parIso = parentIsol;</span>
+
+<span class="fc" id="L152">        System.out.println(&quot;--------------------------------------------------&quot;);</span>
+<span class="fc" id="L153">        System.out.println( &quot;Revenu net declarant1 : &quot; + rNetDecl1 );</span>
+<span class="fc" id="L154">        System.out.println( &quot;Revenu net declarant2 : &quot; + rNetDecl2 );</span>
+<span class="fc" id="L155">        System.out.println( &quot;Situation familiale : &quot; + sitFam.name() );</span>
+
+        // Abattement
+<span class="fc" id="L158">        calculAbatement();</span>
+
+        // parts déclarants
+<span class="fc" id="L161">        calculPartDeclarants();</span>
+
+        // Contribution exceptionnelle sur les hauts revenus
+<span class="fc" id="L164">        calculContributionHautsRevenus();</span>
+
+        // Calcul impôt des declarants
+<span class="fc" id="L167">        calculImpotdeclarants();</span>
+
+        // Calcul impôt foyer fiscal complet
+<span class="fc" id="L170">        calculImpotFoyerFiscalComplet();</span>
+
+        // Vérification de la baisse d'impôt autorisée
+<span class="fc" id="L173">        calculBaisseImpot();</span>
+
+        // Calcul de la decote
+<span class="fc" id="L176">        calculDecote();</span>
+
+        // Calcul de l'impôt sur le revenu net final
+<span class="fc" id="L179">        mImp = mImp - decote;</span>
+
+<span class="fc" id="L181">        mImp += contribExceptionnelle;</span>
+
+<span class="fc" id="L183">        mImp = Math.round( mImp );</span>
+
+<span class="fc" id="L185">        System.out.println( &quot;Impôt sur le revenu net final : &quot; + mImp );</span>
+<span class="fc" id="L186">        return  (int)mImp;</span>
+    }
+
+
+    /**
+     * EXIGENCE : EXG_IMPOT_02
+     * Calcule l'abattement applicable sur les revenus nets en se basant sur un taux prédéfini, tout en respectant des limites minimales
+     * et maximales. Met à jour ensuite le revenu fiscal de référence en soustrayant l'abattement du total des revenus nets.
+     */
+    private void calculAbatement(){
+<span class="fc" id="L196">        long abt1 = Math.round(rNetDecl1 * TAUX_ABATTEMENT);</span>
+<span class="fc" id="L197">        long abt2 = Math.round(rNetDecl2 * TAUX_ABATTEMENT);</span>
+
+<span class="fc bfc" id="L199" title="All 2 branches covered.">        if (abt1 &gt; LIMITE_ABATTEMENT_MAX) {</span>
+<span class="fc" id="L200">            abt1 = LIMITE_ABATTEMENT_MAX;</span>
+        }
+<span class="fc bfc" id="L202" title="All 4 branches covered.">        if ( sitFam == SituationFamiliale.MARIE || sitFam == SituationFamiliale.PACSE ) {</span>
+<span class="fc bfc" id="L203" title="All 2 branches covered.">            if (abt2 &gt; LIMITE_ABATTEMENT_MAX) {</span>
+<span class="fc" id="L204">                abt2 = LIMITE_ABATTEMENT_MAX;</span>
+            }
+        }
+
+<span class="fc bfc" id="L208" title="All 2 branches covered.">        if (abt1 &lt; LIMITE_ABATTEMENT_MIN) {</span>
+<span class="fc" id="L209">            abt1 = LIMITE_ABATTEMENT_MIN;</span>
+        }
+
+<span class="fc bfc" id="L212" title="All 4 branches covered.">        if ( sitFam == SituationFamiliale.MARIE || sitFam == SituationFamiliale.PACSE ) {</span>
+<span class="fc bfc" id="L213" title="All 2 branches covered.">            if (abt2 &lt; LIMITE_ABATTEMENT_MIN) {</span>
+<span class="fc" id="L214">                abt2 = LIMITE_ABATTEMENT_MIN;</span>
+            }
+        }
+
+<span class="fc" id="L218">        abt = abt1 + abt2;</span>
+<span class="fc" id="L219">        System.out.println( &quot;Abattement : &quot; + abt );</span>
+
+<span class="fc" id="L221">        rFRef = rNetDecl1 + rNetDecl2 - abt;</span>
+<span class="fc bfc" id="L222" title="All 2 branches covered.">        if ( rFRef &lt; 0 ) {</span>
+<span class="fc" id="L223">            rFRef = 0;</span>
+        }
+
+<span class="fc" id="L226">        System.out.println( &quot;Revenu fiscal de référence : &quot; + rFRef );</span>
+<span class="fc" id="L227">    }</span>
+
+
+    /**
+     * EXIGENCE : EXG_IMPOT_03
+     * Calcule le nombre de parts fiscales du foyer en fonction de la situation familiale, du nombre d'enfants à charge,
+     * du nombre d'enfants handicapés et du statut de parent isolé.
+     */
+    private void calculPartDeclarants(){
+<span class="pc bpc" id="L236" title="1 of 3 branches missed.">        switch ( sitFam ) {</span>
+            case CELIBATAIRE, DIVORCE, VEUF:
+<span class="fc" id="L238">                nbPtsDecl = 1;</span>
+<span class="fc" id="L239">                break;</span>
+            case MARIE, PACSE:
+<span class="fc" id="L241">                nbPtsDecl = 2;</span>
+                break;
+        }
+
+<span class="fc" id="L245">        System.out.println( &quot;Nombre d'enfants  : &quot; + nbEnf );</span>
+<span class="fc" id="L246">        System.out.println( &quot;Nombre d'enfants handicapés : &quot; + nbEnfH );</span>
+
+        // parts enfants à charge
+<span class="fc bfc" id="L249" title="All 2 branches covered.">        if ( nbEnf &lt;= 2 ) {</span>
+<span class="fc" id="L250">            nbPts = nbPtsDecl + nbEnf * 0.5;</span>
+<span class="pc bpc" id="L251" title="1 of 2 branches missed.">        } else if ( nbEnf &gt; 2 ) {</span>
+<span class="fc" id="L252">            nbPts = nbPtsDecl+  1.0 + ( nbEnf - 2 );</span>
+        }
+
+        // parent isolé
+<span class="fc" id="L256">        System.out.println( &quot;Parent isolé : &quot; + parIso );</span>
+
+<span class="fc bfc" id="L258" title="All 2 branches covered.">        if ( parIso ) {</span>
+<span class="pc bpc" id="L259" title="1 of 2 branches missed.">            if ( nbEnf &gt; 0 ){</span>
+<span class="fc" id="L260">                nbPts = nbPts + 0.5;</span>
+            }
+        }
+
+        // Veuf avec enfant
+<span class="fc bfc" id="L265" title="All 4 branches covered.">        if ( sitFam == SituationFamiliale.VEUF &amp;&amp; nbEnf &gt; 0 ) {</span>
+<span class="fc" id="L266">            nbPts = nbPts + 1;</span>
+        }
+
+        // enfant handicapé
+<span class="fc" id="L270">        nbPts = nbPts + nbEnfH * 0.5;</span>
+
+<span class="fc" id="L272">        System.out.println( &quot;Nombre de parts : &quot; + nbPts );</span>
+<span class="fc" id="L273">    }</span>
+
+    /**
+     * EXIGENCE : EXG_IMPOT_07:
+     * Calcule la contribution exceptionnelle sur les hauts revenus en se basant sur le revenu fiscal de référence et
+     * en appliquant des taux spécifiques selon des tranches définies pour les célibataires et les couples.
+     */
+    private void calculContributionHautsRevenus(){
+<span class="fc" id="L281">        contribExceptionnelle = 0;</span>
+<span class="fc" id="L282">        int i = 0;</span>
+        do {
+<span class="pc bpc" id="L284" title="1 of 4 branches missed.">            if ( rFRef &gt;= limitesCEHR[i] &amp;&amp; rFRef &lt; limitesCEHR[i+1] ) {</span>
+<span class="fc bfc" id="L285" title="All 2 branches covered.">                if ( nbPtsDecl == 1 ) {</span>
+<span class="fc" id="L286">                    contribExceptionnelle += ( rFRef - limitesCEHR[i] ) * tauxCEHRCelibataire[i];</span>
+                } else {
+<span class="fc" id="L288">                    contribExceptionnelle += ( rFRef - limitesCEHR[i] ) * tauxCEHRCouple[i];</span>
+                }
+<span class="fc" id="L290">                break;</span>
+            } else {
+<span class="fc bfc" id="L292" title="All 2 branches covered.">                if ( nbPtsDecl == 1 ) {</span>
+<span class="fc" id="L293">                    contribExceptionnelle += ( limitesCEHR[i+1] - limitesCEHR[i] ) * tauxCEHRCelibataire[i];</span>
+                } else {
+<span class="fc" id="L295">                    contribExceptionnelle += ( limitesCEHR[i+1] - limitesCEHR[i] ) * tauxCEHRCouple[i];</span>
+                }
+            }
+<span class="fc" id="L298">            i++;</span>
+<span class="pc bpc" id="L299" title="1 of 2 branches missed.">        } while( i &lt; 5);</span>
+
+<span class="fc" id="L301">        contribExceptionnelle = Math.round( contribExceptionnelle );</span>
+<span class="fc" id="L302">        System.out.println( &quot;Contribution exceptionnelle sur les hauts revenus : &quot; + contribExceptionnelle );</span>
+<span class="fc" id="L303">    }</span>
+
+
+    /**
+     * EXIGENCE : EXG_IMPOT_04
+     * Calcule l'impôt brut des déclarants en répartissant le revenu fiscal de référence sur le nombre de parts
+     * du déclarant et en appliquant les tranches d'imposition avec leurs taux respectifs.
+     */
+    private void calculImpotdeclarants(){
+<span class="fc" id="L312">        rImposable = rFRef / nbPtsDecl ;</span>
+
+<span class="fc" id="L314">        mImpDecl = 0;</span>
+
+<span class="fc" id="L316">        int i = 0;</span>
+        do {
+<span class="pc bpc" id="L318" title="1 of 4 branches missed.">            if ( rImposable &gt;= limites[i] &amp;&amp; rImposable &lt; limites[i+1] ) {</span>
+<span class="fc" id="L319">                mImpDecl += ( rImposable - limites[i] ) * taux[i];</span>
+<span class="fc" id="L320">                break;</span>
+            } else {
+<span class="fc" id="L322">                mImpDecl += ( limites[i+1] - limites[i] ) * taux[i];</span>
+            }
+<span class="fc" id="L324">            i++;</span>
+<span class="pc bpc" id="L325" title="1 of 2 branches missed.">        } while( i &lt; 5);</span>
+
+<span class="fc" id="L327">        mImpDecl = mImpDecl * nbPtsDecl;</span>
+<span class="fc" id="L328">        mImpDecl = Math.round( mImpDecl );</span>
+
+<span class="fc" id="L330">        System.out.println( &quot;Impôt brut des déclarants : &quot; + mImpDecl );</span>
+<span class="fc" id="L331">    }</span>
+
+
+    /**
+     * EXIGENCE : EXG_IMPOT_04
+     * Calcule l'impôt brut du foyer fiscal complet en répartissant le revenu fiscal de référence sur le nombre total de parts
+     * et en appliquant les différentes tranches d'imposition avec leurs taux respectifs.
+     */
+    private void calculImpotFoyerFiscalComplet(){
+
+<span class="fc" id="L341">        rImposable =  rFRef / nbPts;</span>
+<span class="fc" id="L342">        mImp = 0;</span>
+<span class="fc" id="L343">        int i = 0;</span>
+
+        do {
+<span class="pc bpc" id="L346" title="1 of 4 branches missed.">            if ( rImposable &gt;= limites[i] &amp;&amp; rImposable &lt; limites[i+1] ) {</span>
+<span class="fc" id="L347">                mImp += ( rImposable - limites[i] ) * taux[i];</span>
+<span class="fc" id="L348">                break;</span>
+            } else {
+<span class="fc" id="L350">                mImp += ( limites[i+1] - limites[i] ) * taux[i];</span>
+            }
+<span class="fc" id="L352">            i++;</span>
+<span class="pc bpc" id="L353" title="1 of 2 branches missed.">        } while( i &lt; 5);</span>
+
+<span class="fc" id="L355">        mImp = mImp * nbPts;</span>
+<span class="fc" id="L356">        mImp = Math.round( mImp );</span>
+
+<span class="fc" id="L358">        System.out.println( &quot;Impôt brut du foyer fiscal complet : &quot; + mImp );</span>
+<span class="fc" id="L359">    }</span>
+
+    /**
+     * EXIGENCE : EXG_IMPOT_05
+     * Calcule la baisse d'impôt autorisée en comparant l'impôt des déclarants et l'impôt du foyer fiscal complet,
+     * puis en appliquant un plafonnement basé sur le nombre de parts supplémentaires obtenues.
+     */
+    private void calculBaisseImpot(){
+        // baisse impot
+
+<span class="fc" id="L369">        double baisseImpot = mImpDecl - mImp;</span>
+
+<span class="fc" id="L371">        System.out.println( &quot;Baisse d'impôt : &quot; + baisseImpot );</span>
+
+        // dépassement plafond
+<span class="fc" id="L374">        double ecartPts = nbPts - nbPtsDecl;</span>
+
+<span class="fc" id="L376">        double plafond = (ecartPts / 0.5) * PLAFOND_DEMI_PART;</span>
+
+<span class="fc" id="L378">        System.out.println( &quot;Plafond de baisse autorisée &quot; + plafond );</span>
+
+<span class="fc bfc" id="L380" title="All 2 branches covered.">        if ( baisseImpot &gt;= plafond ) {</span>
+<span class="fc" id="L381">            mImp = mImpDecl - plafond;</span>
+        }
+
+<span class="fc" id="L384">        System.out.println( &quot;Impôt brut après plafonnement avant decote : &quot; + mImp );</span>
+<span class="fc" id="L385">        mImpAvantDecote = mImp;</span>
+<span class="fc" id="L386">    }</span>
+
+
+    /**
+     * EXIGENCE : EXG_IMPOT_06
+     * Calcule le montant de la décote applicable en fonction de l'impôt brut du foyer fiscal, des seuils et
+     * taux définis pour un déclarant seul ou un couple. La décote ne peut pas excéder le montant total de l'impôt.
+     */
+    private void calculDecote(){
+<span class="fc" id="L395">        decote = 0;</span>
+        // decote
+<span class="fc bfc" id="L397" title="All 2 branches covered.">        if ( nbPtsDecl == 1 ) {</span>
+<span class="fc bfc" id="L398" title="All 2 branches covered.">            if ( mImp &lt; SEUIL_DECOTE_DECLARANT_SEUL ) {</span>
+<span class="fc" id="L399">                decote = DECOTE_MAX_DECLARANT_SEUL - ( mImp  * TAUX_DECOTE );</span>
+            }
+        }
+<span class="fc bfc" id="L402" title="All 2 branches covered.">        if (  nbPtsDecl == 2 ) {</span>
+<span class="fc bfc" id="L403" title="All 2 branches covered.">            if ( mImp &lt; SEUIL_DECOTE_DECLARANT_COUPLE ) {</span>
+<span class="fc" id="L404">                decote =  DECOTE_MAX_DECLARANT_COUPLE - ( mImp  * TAUX_DECOTE  );</span>
+            }
+        }
+<span class="fc" id="L407">        decote = Math.round( decote );</span>
+
+<span class="fc bfc" id="L409" title="All 2 branches covered.">        if ( mImp &lt;= decote ) {</span>
+<span class="fc" id="L410">            decote = mImp;</span>
+        }
+
+<span class="fc" id="L413">        System.out.println( &quot;Decote : &quot; + decote );</span>
+<span class="fc" id="L414">    }</span>
+
+    // Getters pour adapter le code legacy pour les tests unitaires
+
+    public double getRevenuReference() {
+<span class="nc" id="L419">        return rFRef;</span>
+    }
+
+    public double getDecote() {
+<span class="fc" id="L423">        return decote;</span>
+    }
+
+    public double getAbattement() {
+<span class="fc" id="L427">        return abt;</span>
+    }
+
+    public double getNbParts() {
+<span class="fc" id="L431">        return nbPts;</span>
+    }
+
+    public double getImpotAvantDecote() {
+<span class="nc" id="L435">        return mImpAvantDecote;</span>
+    }
+
+    public double getImpotNet() {
+<span class="fc" id="L439">        return mImp;</span>
+    }
+
+    public int getRevenuNetDeclatant1() {
+<span class="nc" id="L443">        return rNetDecl1;</span>
+    }
+
+    public int getRevenuNetDeclatant2() {
+<span class="nc" id="L447">        return rNetDecl2;</span>
+    }
+
+    public double getContribExceptionnelle() {
+<span class="nc" id="L451">        return contribExceptionnelle;</span>
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.10.202304240956</span></div></body></html>

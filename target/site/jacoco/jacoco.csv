@@ -1,0 +1,7 @@
+GROUP,PACKAGE,CLASS,INSTRUCTION_MISSED,INSTRUCTION_COVERED,BRANCH_MISSED,BRANCH_COVERED,LINE_MISSED,LINE_COVERED,COMPLEXITY_MISSED,COMPLEXITY_COVERED,METHOD_MISSED,METHOD_COVERED
+SimulateurImpot2024,com.kerware.reusinage_simulateur,AdaptateurSimulateur,14,80,0,0,3,24,3,14,3,14
+SimulateurImpot2024,com.kerware.reusinage_simulateur,Simulateur,20,991,11,86,6,176,16,51,5,13
+SimulateurImpot2024,com.kerware.reusinage_simulateur,SituationFamiliale,0,33,0,0,0,6,0,1,0,1
+SimulateurImpot2024,com.kerware.simulateur,SituationFamiliale,0,33,0,0,0,6,0,1,0,1
+SimulateurImpot2024,com.kerware.simulateur,AdaptateurSimulateur,25,69,0,0,6,21,6,11,6,11
+SimulateurImpot2024,com.kerware.simulateur,Simulateur,23,1104,12,88,7,211,18,45,6,5

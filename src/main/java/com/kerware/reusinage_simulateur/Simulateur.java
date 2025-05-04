@@ -18,19 +18,19 @@ package com.kerware.reusinage_simulateur;
 public class Simulateur {
 
     // Les limites des tranches de revenus imposables
-    private final int[] limites = new int[]{0,11294,28797,82341,177106,Integer.MAX_VALUE};
+    private final int[] limites = new int[]{ 0, 11294, 28797, 82341, 177106, Integer.MAX_VALUE };
 
     // Les taux d'imposition par tranche
-    private final double[] taux = new double[]{0.0,0.11,0.3,0.41,0.45};
+    private final double[] taux = new double[]{ 0.0, 0.11, 0.3, 0.41, 0.45 };
 
     // Les limites des tranches pour la contribution exceptionnelle sur les hauts revenus
-    private final int[] limitesCEHR = new int[]{0,250000,500000,1000000,Integer.MAX_VALUE};
+    private final int[] limitesCEHR = new int[]{ 0, 250000, 500000, 1000000, Integer.MAX_VALUE };
 
     // Les taux de la contribution exceptionnelle sur les hauts revenus pour les celibataires
-    private final double[] tauxCEHRCelibataire = new double[]{0.0,0.03,0.04,0.04};
+    private final double[] tauxCEHRCelibataire = new double[]{ 0.0, 0.03, 0.04, 0.04 };
 
     // Les taux de la contribution exceptionnelle sur les hauts revenus pour les couples
-    private final double[] tauxCEHRCouple = new double[]{0.0,0.0,0.03,0.04};
+    private final double[] tauxCEHRCouple = new double[]{ 0.0, 0.0, 0.03, 0.04 };
 
     private final int NB_ENFANT_MIN = 0;
     private final int NB_ENFANT_MAX = 7;
@@ -44,7 +44,7 @@ public class Simulateur {
     private final double PLAFOND_DEMI_PART = 1759;
 
     private final double SEUIL_DECOTE_DECLARANT_SEUL = 1929;
-    private final double SEUIL_DECOTE_DECLARANT_COUPLE    = 3191;
+    private final double SEUIL_DECOTE_DECLARANT_COUPLE = 3191;
 
     private final double DECOTE_MAX_DECLARANT_SEUL = 873;
     private final double DECOTE_MAX_DECLARANT_COUPLE = 1444;
@@ -175,6 +175,7 @@ public class Simulateur {
         // Calcul de la decote
         calculDecote();
 
+        // Calcul de l'impôt sur le revenu net final
         mImp = mImp - decote;
 
         mImp += contribExceptionnelle;
