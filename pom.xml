@@ -136,6 +136,30 @@
                     </execution>
                 </executions>
             </plugin>
+
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-checkstyle-plugin</artifactId>
+                <version>3.6.0</version>
+                <configuration>
+                    <configLocation>src/test/resources/iut-caen-checks.xml</configLocation>
+                    <failsOnError>true</failsOnError>
+                    <includeTestSourceDirectory>false</includeTestSourceDirectory>
+                    <includes>
+                        <include>**/reusinage_simulateur/**/*.java</include>
+                    </includes>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>checkstyle</id>
+                        <phase>verify</phase>
+                        <goals>
+                            <goal>check</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
         </plugins>
     </build>
 
@@ -168,7 +192,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-checkstyle-plugin</artifactId>
-                <version>3.6.0</version> <!-- Vérifie la dernière version -->
+                <version>3.6.0</version>
                 <reportSets>
                     <reportSet>
                         <reports>
@@ -177,9 +201,11 @@
                     </reportSet>
                 </reportSets>
                 <configuration>
-                    <!-- Choix de la configuration Checkstyle -->
-                    <configLocation>src/test/resources/iut-caen-checks.xml</configLocation> <!-- ou sun_checks.xml -->
+                    <configLocation>src/test/resources/iut-caen-checks.xml</configLocation>
                     <failsOnError>true</failsOnError>
+                    <includes>
+                        <include>**/reusinage_simulateur/**/*.java</include>
+                    </includes>
                 </configuration>
             </plugin>
         </plugins>

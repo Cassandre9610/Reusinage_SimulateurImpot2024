@@ -1,6 +1,4 @@
-#Sun May 04 23:12:45 CEST 2025
-C\:\\Users\\cassa\\Downloads\\SimulateurImpot2024\\SimulateurImpot2024\\Reusinage_SimulateurImpot2024\\src\\main\\java\\com\\kerware\\reusinage_simulateur\\ICalculateurImpot.java=1746371507152
-C\:\\Users\\cassa\\Downloads\\SimulateurImpot2024\\SimulateurImpot2024\\Reusinage_SimulateurImpot2024\\src\\main\\java\\com\\kerware\\reusinage_simulateur\\SituationFamiliale.java=1746371456718
-C\:\\Users\\cassa\\Downloads\\SimulateurImpot2024\\SimulateurImpot2024\\Reusinage_SimulateurImpot2024\\src\\main\\java\\com\\kerware\\simulateur\\ICalculateurImpot.java=1746366431788
-C\:\\Users\\cassa\\Downloads\\SimulateurImpot2024\\SimulateurImpot2024\\Reusinage_SimulateurImpot2024\\src\\main\\java\\com\\kerware\\simulateur\\SituationFamiliale.java=1746366431845
-configuration*?=38FA0538E450C5A2356640231DFF618F6D5FAD4D
+#Sun May 04 23:42:34 CEST 2025
+configuration*?=6CA9BCA10D6E421680EAFBB0209CC5B78CA045EA
+module-resource*?\:checkstyle-suppressions.xml=E8FE851862744BA1F95A8A32450E353B7A611D62
+module-resource*?\:checkstyle-xpath-suppressions.xml=37BAD3BEBC466CB1B55437A5EF47B094087D77B
