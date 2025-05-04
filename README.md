@@ -26,13 +26,7 @@ git clone https://github.com/Cassandre9610/Reusinage_SimulateurImpot2024.git
 cd Reusinage_SimulateurImpot2024
 ```
 
-### 2. Compiler le projet
-
-```bash
-mvn clean compile
-```
-
-### 3. Exécuter le fichier .bat
+### 2. Exécuter le fichier .bat
 
 ```bash
 .\automatisation-qualite-code.bat
@@ -40,7 +34,7 @@ mvn clean compile
 Le rapport HTML sera disponible ici :
 `target/site/jacoco/index.html`
 
-### 5. Vérifier la qualité du code avec Checkstyle
+### 3. Vérifier la qualité du code avec Checkstyle
 
 ```bash
 mvn checkstyle:check
